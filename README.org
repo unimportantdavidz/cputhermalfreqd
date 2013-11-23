@@ -1,0 +1,54 @@
+#+TITLE: CPU Thermal Frequency Daemon
+#+OPTIONS: toc:nil
+
+/Frequency daemon focused on preventing thermal shutdown/
+
+  * Home page :: [[http://danmbox.github.com/cputhermalfreqd]]
+  * Downloads :: [[https://github.com/danmbox/cputhermalfreqd][github]], [[https://github.com/danmbox/cputhermalfreqd/releases][releases]]
+  * Author :: [[http://alumnus.caltech.edu/~muresan/][Dan A. Muresan]] (danmbox at gmail dot com)
+
+
+* DESCRIPTION
+  [[http://danmbox.github.com/cputhermalfreqd][cputhermalfreqd]] is a
+  daemon that controls the CPU speed using the cpufreq drivers. Unlike
+  other similar daemons, it is focused on slowing down your CPU once
+  the system gets too hot, thus preventing inopportune thermal
+  shutdowns (and thermal shutdowns are /never/ opportune).
+
+  =cputhermalfreqd= initially figures out what sensors are available
+  by =strace=-ing the =sensors= command. It then monitors them
+  periodically, and changes CPU speed via the =cpufreq-set= command
+  according to temperature thresholds defined by the user.
+
+* DEPENDENCIES
+
+  * Python 2.7
+  * [[http://lm-sensors.org/][lm-sensors]]
+  * [[http://www.kernel.org/pub/linux/utils/kernel/cpufreq/][cpufrequtils]]
+
+* INSTALLING
+
+  Run =cputhermalfreqd= directly as below.
+
+* RUNNING
+  
+  =cputhermalfreqd= expects a decreasing list of temperature
+  thresholds expressed as degrees Celsius below the critical
+  temperature. For example =cputhermalfreq 23 18 12= means
+
+  * run at the fastest CPU speed so long as all sensors are at least 23°C
+    below their critical temperature
+  * then switch to the 2nd fastest speed so long as all sensors have
+    at least 18°C to go
+  * then to the 3rd speed step (until at least one sensors is within
+    12°C of its critical temperature)
+  * finally switch to the 4th speed step
+
+  If the temperature decreases, =cputhermalfreqd= increases CPU speed
+  correspondingly.
+
+* COPYRIGHT
+
+  Copyright 2013 Dan A. Muresan
+
+  See LICENSE.txt for licensing information.

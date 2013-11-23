@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+
+import sys, os, subprocess, time
+from argparse import ArgumentParser
+import re
+from bisect import bisect_left
+
+fnull = open (os.devnull, "w")
+
+def slurp (fname):
+  with open (fname) as f: return f.read()
+  
+def extract_sensors_strace ():
+  p = subprocess.Popen (["strace", "-eopen", "sensors"], stdout = fnull, stderr = subprocess.PIPE)
+  return p.communicate () [1]
+
+def extract_devs (strace):
+  devs = {}
+  for l in strace.split ("\n"):
+    if "ENOENT" in l: continue
+    m = re.search ('"(/sys/class/hwmon/[^"]+)_(input|crit)"', l)
+    if m:
+      if not m.group (1) in devs: devs [m.group (1)] = set ()
+      devs [m.group (1)].add (m.group (2))
+  for k, v in devs.iteritems ():
+    if len (v) != 2: devs.delete (k)
+  return devs.keys ();
+
+def regulator_loop (freqs, devs, deltas, pause):
+  last_freq = None
+  while True:
+    step = 0
+    time.sleep (pause)
+    for d in devs:
+      tdiff = int (slurp (d + "_input")) - int (slurp (d + "_crit"))
+      print (d, tdiff, bisect_left (deltas, tdiff))
+      step = max (step, bisect_left (deltas, tdiff))
+    freq = freqs [step]
+    if freq != last_freq:
+      print "Step {0}, freq {1}".format (step, freq)
+      os.system ("cpufreq-set -r -d {0} -u {0}".format (freq))
+      last_freq = freq
+  
+with open ("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies") as f:
+  freqs = [int (s) for s in f.readline ().rstrip ().split (" ")]
+devs = extract_devs (extract_sensors_strace ())
+
+argparser = ArgumentParser (description = "Adjusts CPU frequency continuously according to temperature sensors",
+                            epilog = "Must be run as root. Set up sensors (sensors-detect) first.")
+argparser.add_argument ("--time", "-t", metavar = "secs", type = float, default = 0.25,
+                        help = "seconds between sensor readings (default: %(default)s)")
+argparser.add_argument ("temp_thresholds", type = float, nargs = "+",
+                        help = "descending list of temperature thresholds (in deg. C below critical temperature, e.g. 23 18 12); test applies to all sensors, and hottest sensor sets policy")
+opts = argparser.parse_args ()
+deltas = [-t * 1000 for t in opts.temp_thresholds]
+
+print "Frequencies: {0}".format (freqs)
+print "Devices: {0}".format (devs)
+print "Temperature limits: {0}".format (deltas)
+regulator_loop (freqs, devs, deltas, opts.time)
