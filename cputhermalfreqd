@@ -22,9 +22,7 @@ def extract_devs (strace):
     if m:
       if not m.group (1) in devs: devs [m.group (1)] = set ()
       devs [m.group (1)].add (m.group (2))
-  for k, v in devs.iteritems ():
-    if len (v) != 2: devs.delete (k)
-  return devs.keys ();
+  return list (k for k in devs if len (devs [k]) == 2)
 
 def regulator_loop (freqs, devs, deltas, pause):
   last_freq = None
