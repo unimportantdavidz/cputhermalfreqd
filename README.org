@@ -25,6 +25,7 @@
   * Python 2.7
   * [[http://lm-sensors.org/][lm-sensors]]
   * [[http://www.kernel.org/pub/linux/utils/kernel/cpufreq/][cpufrequtils]]
+  * strace
 
 * INSTALLING
 
