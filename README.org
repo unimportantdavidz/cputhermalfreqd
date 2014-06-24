@@ -50,6 +50,6 @@
 
 * COPYRIGHT
 
-  Copyright 2013 Dan A. Muresan
+  Copyright 2013-2014 Dan A. Muresan
 
   See LICENSE.txt for licensing information.
